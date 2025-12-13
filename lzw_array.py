@@ -1,0 +1,258 @@
+import sys
+import struct
+import time
+import os
+import csv
+
+# ==========================================
+# TASK 1: BASELINE DICTIONARY (ARRAY / LIST)
+# ==========================================
+
+class ArrayDictionary:
+    """
+    A simple dictionary wrapper that uses a Python LIST (Array) 
+    and Linear Search to strictly adhere to Task 1 requirements.
+    """
+    def __init__(self):
+        # Initialize with ASCII 0-255
+        self.entries = [bytes([i]) for i in range(256)]
+    
+    def search(self, byte_string):
+        """
+        TASK 1 REQUIREMENT: Linear search through the array.
+        Returns index if found, -1 if not.
+        """
+        # In a real array implementation, we scan from 0 to end.
+        # This is O(N) where N is current dictionary size.
+        for index, entry in enumerate(self.entries):
+            if entry == byte_string:
+                return index
+        return -1
+
+    def add(self, byte_string):
+        """Adds a new string to the end of the array."""
+        if len(self.entries) < 65536: # Hard limit for 16-bit codes
+            self.entries.append(byte_string)
+            return len(self.entries) - 1
+        return -1 # Dictionary full
+
+    def get_entry(self, index):
+        if 0 <= index < len(self.entries):
+            return self.entries[index]
+        return None
+
+    def size(self):
+        return len(self.entries)
+
+    def dump_to_csv(self, filename):
+        """Generates the required CSV file of the final dictionary."""
+        try:
+            with open(filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(["Code", "String (Repr)"])
+                for code, entry in enumerate(self.entries):
+                    writer.writerow([code, repr(entry)])
+            print(f"[Log] Dictionary dumped to {filename}")
+        except Exception as e:
+            print(f"[Error] Could not dump dictionary: {e}")
+
+# ==========================================
+# COMPRESSOR
+# ==========================================
+
+def lzw_compress(input_path, output_path, csv_path):
+    print(f"--- Starting Compression: {input_path} ---")
+    
+    # Initialize Dictionary
+    dictionary = ArrayDictionary()
+    
+    # Metrics start
+    start_time = time.time()
+    
+    # Read entire input file as bytes
+    try:
+        with open(input_path, 'rb') as f:
+            data = f.read()
+    except FileNotFoundError:
+        print("Input file not found.")
+        return
+
+    if not data:
+        print("Empty file.")
+        return
+
+    compressed_codes = []
+    
+    # LZW Logic
+    P = bytes([data[0]])
+    
+    # Progress bar helpers
+    total_bytes = len(data)
+    
+    for i in range(1, total_bytes):
+        C = bytes([data[i]])
+        P_plus_C = P + C
+        
+        # TASK 1: Linear Search for P + C
+        idx = dictionary.search(P_plus_C)
+        
+        if idx != -1:
+            # Found: extend prefix
+            P = P_plus_C
+        else:
+            # Not found: 
+            # 1. Output code for P
+            p_code = dictionary.search(P) # We know P is in dict
+            compressed_codes.append(p_code)
+            
+            # 2. Add P + C to dictionary
+            dictionary.add(P_plus_C)
+            
+            # 3. Reset P to C
+            P = C
+            
+        # Simple progress log for large files (every 1000 bytes)
+        if i % 1000 == 0:
+            sys.stdout.write(f"\rCompressing: {i}/{total_bytes} bytes")
+            sys.stdout.flush()
+
+    # Output code for the last P
+    p_code = dictionary.search(P)
+    compressed_codes.append(p_code)
+    
+    print(f"\rCompressing: {total_bytes}/{total_bytes} bytes - Done.")
+
+    # Write binary output file (16-bit Big Endian)
+    with open(output_path, 'wb') as f:
+        for code in compressed_codes:
+            f.write(struct.pack('>H', code))
+
+    # Metrics end
+    end_time = time.time()
+    duration = end_time - start_time
+    input_size = os.path.getsize(input_path)
+    output_size = os.path.getsize(output_path)
+    compression_ratio = input_size / output_size if output_size > 0 else 0
+    throughput = (input_size / 1024 / 1024) / duration if duration > 0 else 0
+    
+    # Log Metrics
+    print("\n[Compression Metrics]")
+    print(f"Time Taken: {duration:.4f} seconds")
+    print(f"Original Size: {input_size} bytes")
+    print(f"Compressed Size: {output_size} bytes")
+    print(f"Compression Ratio: {compression_ratio:.2f}")
+    print(f"Throughput: {throughput:.2f} MB/s")
+    print(f"Peak Dictionary Size: {dictionary.size()} entries")
+    
+    # Dump Dictionary CSV
+    dictionary.dump_to_csv(csv_path)
+
+# ==========================================
+# DECOMPRESSOR
+# ==========================================
+
+def lzw_decompress(input_path, output_path, csv_path):
+    print(f"\n--- Starting Decompression: {input_path} ---")
+    
+    # Initialize Dictionary (Same initial state as compressor)
+    dictionary = ArrayDictionary()
+    
+    start_time = time.time()
+    
+    decompressed_data = bytearray()
+    
+    # Read compressed file
+    try:
+        with open(input_path, 'rb') as f:
+            compressed_data = f.read()
+    except FileNotFoundError:
+        print("Compressed file not found.")
+        return
+
+    # Unpack 16-bit codes
+    codes = []
+    for i in range(0, len(compressed_data), 2):
+        chunk = compressed_data[i:i+2]
+        if len(chunk) == 2:
+            codes.append(struct.unpack('>H', chunk)[0])
+
+    if not codes:
+        print("Empty compressed file.")
+        return
+
+    # LZW Decompression Logic
+    
+    # Handle first code
+    OLD_CODE = codes[0]
+    OLD_STRING = dictionary.get_entry(OLD_CODE)
+    decompressed_data.extend(OLD_STRING)
+    
+    for i in range(1, len(codes)):
+        NEW_CODE = codes[i]
+        
+        # Check for TRICKY CASE: Code not in dictionary yet
+        if NEW_CODE >= dictionary.size():
+            # Rule: String = OLD_STRING + FirstChar(OLD_STRING)
+            char_to_add = bytes([OLD_STRING[0]])
+            STRING = OLD_STRING + char_to_add
+        else:
+            # Normal Case
+            STRING = dictionary.get_entry(NEW_CODE)
+        
+        decompressed_data.extend(STRING)
+        
+        # Update Dictionary
+        # Rule: Add OLD_STRING + FirstChar(STRING)
+        char_to_add = bytes([STRING[0]])
+        dictionary.add(OLD_STRING + char_to_add)
+        
+        OLD_CODE = NEW_CODE
+        OLD_STRING = STRING
+
+    # Write output
+    with open(output_path, 'wb') as f:
+        f.write(decompressed_data)
+
+    # Metrics
+    end_time = time.time()
+    duration = end_time - start_time
+    output_size = os.path.getsize(output_path)
+    throughput = (output_size / 1024 / 1024) / duration if duration > 0 else 0
+
+    print("[Decompression Metrics]")
+    print(f"Time Taken: {duration:.4f} seconds")
+    print(f"Throughput: {throughput:.2f} MB/s")
+    
+    # Dump Dictionary for verification (Optional, but good for debugging)
+    dictionary.dump_to_csv(csv_path)
+
+# ==========================================
+# MAIN EXECUTION
+# ==========================================
+
+if __name__ == "__main__":
+    # Create a dummy test file if needed
+    test_input = "test_synthetic.txt"
+    if not os.path.exists(test_input):
+        with open(test_input, "w") as f:
+            # Create a repetitive string to ensure compression works
+            f.write("ABABABABABABABAB" * 50 + "CDEFG" * 20)
+    
+    compressed_file = "test_output.lzw"
+    decompressed_file = "test_restored.txt"
+    comp_csv = "dict_compressor.csv"
+    decomp_csv = "dict_decompressor.csv"
+
+    # 1. Compress
+    lzw_compress(test_input, compressed_file, comp_csv)
+    
+    # 2. Decompress
+    lzw_decompress(compressed_file, decompressed_file, decomp_csv)
+    
+    # 3. Verification
+    print("\n--- Verification ---")
+    with open(test_input, 'rb') as f1, open(decompressed_file, 'rb') as f2:
+        if f1.read() == f2.read():
+            print("SUCCESS: Decompressed file matches original exactly!")
+        else:
+            print("FAILURE: Files do not match.")
