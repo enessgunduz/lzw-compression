@@ -4,15 +4,15 @@ CSE 4077 Project 1: LZW Encoder-Decoder
 Project Overview
 ----------------
 
-This project implements a complete **Lempel-Ziv-Welch (LZW)** compression and decompression system. The core contribution is the implementation of the dictionary using three different data structures to analyze performance trade-offs^2^:
+This project implements a complete **Lempel-Ziv-Welch (LZW)** compression and decompression system. The core contribution is the implementation of the dictionary using three different data structures to analyze performance trade-offs:
 
-1.  **Task 1:** Baseline LZW using a **Simple Array** (Linear Search)^3^.
+1.  **Task 1:** Baseline LZW using a **Simple Array** (Linear Search).
 
-2.  **Task 2:** LZW using a **Trie** (Prefix Tree)^4^.
+2.  **Task 2:** LZW using a **Trie** (Prefix Tree).
 
-3.  **Task 3:** LZW using a **Patricia Trie** (Radix Tree) with edge splitting^5^.
+3.  **Task 3:** LZW using a **Patricia Trie** (Radix Tree) with edge splitting.
 
-For each method, the system produces a compressed binary file and a CSV dump of the dictionary^6^^6^^6^.
+For each method, the system produces a compressed binary file and a CSV dump of the dictionary.
 
 * * * * *
 
