@@ -27,7 +27,7 @@ def create_genome_file(filename, size_mb=1):
 def create_synthetic_file(filename, size_mb=1):
     """
     Generates highly repetitive synthetic data.
-    Excellent for testing best-case compression ratio (LZW loves this).
+    Excellent for testing best-case compression ratio
     Pattern: AAAAA...BBBBB... repeated.
     """
     print(f"Generating Synthetic file: {filename} ({size_mb} MB)...")
@@ -44,7 +44,7 @@ def create_synthetic_file(filename, size_mb=1):
 
 def create_source_code_file(filename):
     """
-    Combines your existing Python scripts into one file to simulate 'Source Code' input.
+    Combines the existing Python scripts into one file to simulate 'Source Code' input.
     Source code has medium repetition (keywords like 'def', 'import', 'self').
     """
     print(f"Generating Source Code file: {filename}...")
