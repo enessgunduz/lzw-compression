@@ -132,7 +132,7 @@ Each script performs an automatic self-check after decompression:
 Dictionary CSV Format
 ---------------------
 
-As requested, the dictionary is dumped to a CSV file for inspection^7^.
+As requested, the dictionary is dumped to a CSV file for inspection.
 
 -   **Column 1:** Integer Code (e.g., `256`)
 
