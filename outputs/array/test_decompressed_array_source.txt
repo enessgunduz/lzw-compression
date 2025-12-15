@@ -1,16 +1,29 @@
+
+# --- CONTENT OF lzw_array.py ---
 import sys
 import struct
 import time
 import os
 import csv
 
+# ==========================================
+# TASK 1: BASELINE DICTIONARY (ARRAY / LIST)
+# ==========================================
+
 class ArrayDictionary:
+    """
+    A simple dictionary wrapper that uses a Python LIST (Array) 
+    and Linear Search to strictly adhere to Task 1 requirements.
+    """
     def __init__(self):
         # Initialize with ASCII 0-255
         self.entries = [bytes([i]) for i in range(256)]
     
     def search(self, byte_string):
-
+        """
+        TASK 1 REQUIREMENT: Linear search through the array.
+        Returns index if found, -1 if not.
+        """
         # In a real array implementation, we scan from 0 to end.
         # This is O(N) where N is current dictionary size.
         for index, entry in enumerate(self.entries):
@@ -19,6 +32,7 @@ class ArrayDictionary:
         return -1
 
     def add(self, byte_string):
+        """Adds a new string to the end of the array."""
         if len(self.entries) < 65536: # Hard limit for 16-bit codes
             self.entries.append(byte_string)
             return len(self.entries) - 1
@@ -33,6 +47,7 @@ class ArrayDictionary:
         return len(self.entries)
 
     def dump_to_csv(self, filename):
+        """Generates the required CSV file of the final dictionary."""
         try:
             with open(filename, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
@@ -43,6 +58,9 @@ class ArrayDictionary:
         except Exception as e:
             print(f"[Error] Could not dump dictionary: {e}")
 
+# ==========================================
+# COMPRESSOR
+# ==========================================
 
 def lzw_compress(input_path, output_path, csv_path):
     print(f"--- Starting Compression: {input_path} ---")
@@ -131,6 +149,10 @@ def lzw_compress(input_path, output_path, csv_path):
     # Dump Dictionary CSV
     dictionary.dump_to_csv(csv_path)
 
+# ==========================================
+# DECOMPRESSOR
+# ==========================================
+
 def lzw_decompress(input_path, output_path, csv_path):
     print(f"\n--- Starting Decompression: {input_path} ---")
     
@@ -206,20 +228,22 @@ def lzw_decompress(input_path, output_path, csv_path):
     # Dump Dictionary for verification (Optional, but good for debugging)
     dictionary.dump_to_csv(csv_path)
 
+# ==========================================
+# MAIN EXECUTION
+# ==========================================
 
 if __name__ == "__main__":
     # Create a dummy test file if needed
-    test_input = "test_source.txt"
-    test = "source"
+    test_input = "english.txt"
     if not os.path.exists(test_input):
         with open(test_input, "w") as f:
             # Create a repetitive string to ensure compression works
             f.write("ABABABABABABABAB" * 50 + "CDEFG" * 20)
     
-    compressed_file = f"test_compressed_array_{test}.lzw"
-    decompressed_file = f"test_decompressed_array_{test}.txt"
-    comp_csv = f"dict_compressor_array_{test}.csv"
-    decomp_csv = f"dict_decompressor_array_{test}.csv"
+    compressed_file = "test_output.lzw"
+    decompressed_file = "test_restored.txt"
+    comp_csv = "dict_compressor.csv"
+    decomp_csv = "dict_decompressor.csv"
 
     # 1. Compress
     lzw_compress(test_input, compressed_file, comp_csv)

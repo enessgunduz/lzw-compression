@@ -4,9 +4,6 @@ import time
 import os
 import csv
 
-# ==========================================
-# TASK 2: TRIE-BASED DICTIONARY
-# ==========================================
 
 class TrieNode:
     def __init__(self, code=-1):
@@ -25,7 +22,6 @@ class TrieDictionary:
         self.next_code = 256
 
     def insert_initial(self, string, code):
-        """Helper to load ASCII table initially."""
         node = self.root
         for byte in string:
             if byte not in node.children:
@@ -35,16 +31,9 @@ class TrieDictionary:
         self.num_entries += 1
 
     def search_node(self, byte_val, current_node):
-        """
-        Fast lookup: Checks if 'current_node' has a child 'byte_val'.
-        Returns the child node if exists, else None.
-        """
         return current_node.children.get(byte_val)
 
     def insert_child(self, byte_val, parent_node):
-        """
-        Adds a new node as a child of parent_node with the next available code.
-        """
         if self.next_code < 65536:
             new_node = TrieNode(self.next_code)
             parent_node.children[byte_val] = new_node
@@ -57,10 +46,6 @@ class TrieDictionary:
         return self.num_entries
 
     def dump_to_csv(self, filename):
-        """
-        Traverses the Trie to verify dictionary content. 
-        Uses DFS to reconstruct strings.
-        """
         rows = []
         def dfs(node, path_bytes):
             if node.code != -1:
@@ -82,9 +67,6 @@ class TrieDictionary:
         except Exception as e:
             print(f"[Error] Could not dump dictionary: {e}")
 
-# ==========================================
-# COMPRESSOR (TRIE VERSION)
-# ==========================================
 
 def lzw_compress_trie(input_path, output_path, csv_path):
     print(f"--- Starting Trie Compression: {input_path} ---")
@@ -169,11 +151,7 @@ def lzw_compress_trie(input_path, output_path, csv_path):
     
     dictionary.dump_to_csv(csv_path)
 
-# ==========================================
-# DECOMPRESSOR (STANDARD ARRAY)
-# ==========================================
-# Note: Decompression maps Code -> String. An array is O(1). 
-# A Trie is not algorithmically beneficial for the decompressor's lookups.
+
 # We reuse the logic from Task 1 for the Decompressor to ensure correctness.
 
 def lzw_decompress_standard(input_path, output_path, csv_path):
@@ -239,16 +217,13 @@ def lzw_decompress_standard(input_path, output_path, csv_path):
     except:
         pass
 
-# ==========================================
-# MAIN EXECUTION
-# ==========================================
-
 if __name__ == "__main__":
-    test_input = "test_synthetic.txt"
-    compressed_file = "test_output_trie.lzw"
-    decompressed_file = "test_restored_trie.txt"
-    comp_csv = "dict_trie_compressor.csv"
-    decomp_csv = "dict_trie_decompressor.csv"
+    test_input = "english.txt"
+    test = "english"
+    compressed_file = f"test_output_trie_{test}.lzw"
+    decompressed_file = f"test_restored_trie_{test}.txt"
+    comp_csv = f"dict_trie_compressor_{test}.csv"
+    decomp_csv = f"dict_trie_decompressor_{test}.csv"
 
     # 1. Compress with Trie
     lzw_compress_trie(test_input, compressed_file, comp_csv)

@@ -4,9 +4,6 @@ import time
 import os
 import csv
 
-# ==========================================
-# TASK 3: PATRICIA TRIE (RADIX TREE)
-# ==========================================
 
 class PatriciaNode:
     def __init__(self, code=-1):
@@ -105,10 +102,6 @@ class PatriciaDictionary:
         return False
 
     def search_longest_prefix(self, string):
-        """
-        Finds the longest prefix of 'string' that exists in the dictionary.
-        Returns (node_code, match_length)
-        """
         node = self.root
         idx = 0
         n = len(string)
@@ -166,9 +159,6 @@ class PatriciaDictionary:
         except:
             pass
 
-# ==========================================
-# COMPRESSOR (PATRICIA VERSION)
-# ==========================================
 
 def lzw_compress_patricia(input_path, output_path, csv_path):
     print(f"--- Starting Patricia Compression: {input_path} ---")
@@ -189,9 +179,6 @@ def lzw_compress_patricia(input_path, output_path, csv_path):
     compressed_codes = []
     
     # LZW Logic with Patricia Search
-    # Unlike basic Trie, we can't just hold a node pointer because 
-    # the "longest match" might cover multiple edges or part of an edge.
-    # We will use the 'search_longest_prefix' helper.
     
     idx = 0
     n = len(data)
@@ -199,9 +186,6 @@ def lzw_compress_patricia(input_path, output_path, csv_path):
     while idx < n:
         # We want to match the longest string starting at data[idx]
         # We can look ahead safely because we have the whole data in memory
-        
-        # Heuristic: We only need to peek ahead as much as the longest likely string.
-        # But 'search_longest_prefix' handles limits naturally.
         
         # 1. Find longest match P
         # We pass a slice of the data. In production, avoid slicing large buffers.
@@ -253,19 +237,17 @@ def lzw_compress_patricia(input_path, output_path, csv_path):
     
     dictionary.dump_to_csv(csv_path)
 
-# ==========================================
-# MAIN EXECUTION
-# ==========================================
 
 if __name__ == "__main__":
-    test_input = "test_synthetic.txt"
+    test_input = "english.txt"
+    test = "english"
     # We use the same decompressor logic (standard LZW rule)
-    from lzw_trie import lzw_decompress_standard
-    
-    compressed_file = "test_output_patricia.lzw"
-    decompressed_file = "test_restored_patricia.txt"
-    comp_csv = "dict_patricia_compressor.csv"
-    decomp_csv = "dict_patricia_decompressor.csv"
+    from lzw_trie import lzw_decompress_standard  
+
+    compressed_file = f"test_output_patricia_{test}.lzw"
+    decompressed_file = f"test_restored_patricia_{test}.txt"
+    comp_csv = f"dict_patricia_compressor_{test}.csv"
+    decomp_csv = f"dict_patricia_decompressor_{test}.csv"
 
     # 1. Compress
     lzw_compress_patricia(test_input, compressed_file, comp_csv)
